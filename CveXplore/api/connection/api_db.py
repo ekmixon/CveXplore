@@ -46,16 +46,14 @@ class ApiDatabaseSource(object):
         self.address = address
 
         if api_path is not None:
-            self.url = "{}://{}:{}/{}".format(
-                protocol, address[0], address[1], api_path
-            )
+            self.url = f"{protocol}://{address[0]}:{address[1]}/{api_path}"
         else:
-            self.url = "{}://{}:{}".format(protocol, address[0], address[1])
+            self.url = f"{protocol}://{address[0]}:{address[1]}"
 
         for each in self.database_mapping:
             setattr(
                 self,
-                "store_{}".format(each),
+                f"store_{each}",
                 ApiDatabaseCollection(
                     address=address,
                     api_path=api_path,
@@ -68,7 +66,7 @@ class ApiDatabaseSource(object):
 
     def __repr__(self):
         """return a string representation of the obj ApiDatabaseSource"""
-        return "<< ApiDatabaseSource: {} >>".format(self.address)
+        return f"<< ApiDatabaseSource: {self.address} >>"
 
 
 class ApiDatabaseCollection(object):
@@ -139,4 +137,4 @@ class ApiDatabaseCollection(object):
 
     def __repr__(self):
         """return a string representation of the obj ApiDatabaseCollection"""
-        return "<< ApiDatabaseCollection: {} >>".format(self.address)
+        return f"<< ApiDatabaseCollection: {self.address} >>"

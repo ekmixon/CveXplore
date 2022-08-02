@@ -24,15 +24,13 @@ class Cwe(DatasourceConnection):
         :return: Cwe object
         :rtype: Cwe
         """
-        if hasattr(self, "related_weaknesses"):
-            if len(self.related_weaknesses) != 0:
-                for each in self.related_weaknesses:
+        if (
+            hasattr(self, "related_weaknesses")
+            and len(self.related_weaknesses) != 0
+        ):
+            for each in self.related_weaknesses:
 
-                    cwe_doc = self._datasource_connection.store_cwe.find_one(
-                        {"id": each}
-                    )
-
-                    yield cwe_doc
+                yield self._datasource_connection.store_cwe.find_one({"id": each})
 
     def iter_related_capecs(self):
         """
@@ -42,12 +40,9 @@ class Cwe(DatasourceConnection):
         :rtype: Capec
         """
 
-        related_capecs = self._datasource_connection.store_capec.find(
+        yield from self._datasource_connection.store_capec.find(
             {"related_weakness": self.id}
         )
-
-        for each in related_capecs:
-            yield each
 
     def to_dict(self):
         """
@@ -67,4 +62,4 @@ class Cwe(DatasourceConnection):
 
     def __repr__(self):
         """ String representation of object """
-        return "<< Cwe:{} >>".format(self.id)
+        return f"<< Cwe:{self.id} >>"

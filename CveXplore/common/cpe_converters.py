@@ -30,7 +30,7 @@ def from2to3CPE(cpe, autofill=False):
         cpe = unquote(cpe)
     if autofill:
         e = cpe.split(":")
-        for x in range(0, 13 - len(e)):
+        for _ in range(13 - len(e)):
             cpe += ":*"
     return cpe
 
@@ -53,13 +53,12 @@ def from3to2CPE(cpe):
         parts = cpe.split(":")
         next = []
         first = "cpe:/" + ":".join(parts[:5])
-        last = parts[5:]
-        if last:
+        if last := parts[5:]:
             for x in last:
                 next.append("~") if x == "-" else next.append(x)
             if "~" in next:
                 pad(next, 6, "~")
-        cpe = "%s:%s" % (first, "".join(next))
+        cpe = f'{first}:{"".join(next)}'
         cpe = cpe.replace(":-:", "::")
         cpe = cpe.strip(":")
     return cpe

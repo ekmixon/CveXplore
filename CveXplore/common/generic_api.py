@@ -45,7 +45,7 @@ class GenericApi(object):
         self.server = address[0]
         self.port = address[1]
         self.protocol = protocol
-        self.baseurl = "{}://{}:{}".format(self.protocol, self.server, self.port)
+        self.baseurl = f"{self.protocol}://{self.server}:{self.port}"
         self.api_path = api_path
         self.proxies = proxies
         self.user_agent = user_agent
@@ -54,7 +54,7 @@ class GenericApi(object):
 
     def __repr__(self):
         """return a string representation of the obj GenericApi"""
-        return "<<GenericApi:({}, {})>>".format(self.server, self.port)
+        return f"<<GenericApi:({self.server}, {self.port})>>"
 
     def __build_url(self, resource):
         """
@@ -141,10 +141,10 @@ class GenericApi(object):
         """
         try:
             with requests.Session() as session:
-                result = self.__connect(
+                return self.__connect(
                     method=method, resource=resource, session=session, data=data
                 )
-                return result
+
         except requests.ConnectionError:
             print("Connection error, is the host up?")
             raise
@@ -160,7 +160,7 @@ class GenericApi(object):
         return {
             "Accept": "application/json",
             "Content-Type": "application/json",
-            "User-Agent": "{}".format(self.user_agent),
+            "User-Agent": f"{self.user_agent}",
         }
 
     @property

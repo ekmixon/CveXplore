@@ -69,14 +69,12 @@ class Configuration(object):
     def getMaxLogSize(cls):
         size = cls.LOGGING_MAX_FILE_SIZE
         split = re.findall("\d+|\D+", size)
-        multipliers = {"KB": 1024, "MB": 1024 * 1024, "GB": 1024 * 1024 * 1024}
-        if len(split) == 2:
-            base = int(split[0])
-            unit = split[1].strip().upper()
-            return base * multipliers.get(unit, 1024 * 1024)
-        # if size is not a correctly defined set it to 100MB
-        else:
+        if len(split) != 2:
             return 100 * 1024 * 1024
+        base = int(split[0])
+        unit = split[1].strip().upper()
+        multipliers = {"KB": 1024, "MB": 1024 * 1024, "GB": 1024 * 1024 * 1024}
+        return base * multipliers.get(unit, 1024 * 1024)
 
     @classmethod
     def getBacklog(cls):

@@ -84,7 +84,7 @@ class GenericDatabaseFactory(DatasourceConnection):
 
     def __repr__(self):
         """ String representation of object """
-        return "<< GenericDatabaseFactory:{} >>".format(self._collection)
+        return f"<< GenericDatabaseFactory:{self._collection} >>"
 
 
 class GenericDatabaseFieldsFunctions(DatasourceConnection):
@@ -131,13 +131,9 @@ class GenericDatabaseFieldsFunctions(DatasourceConnection):
         :rtype: object
         """
 
-        if value is not None:
-            query = {self.__field: value}
-        else:
-            query = None
-
+        query = {self.__field: value} if value is not None else None
         return self._datasource_collection_connection.find(query)
 
     def __repr__(self):
         """ String representation of object """
-        return "<< GenericDatabaseFieldsFunctions:{} >>".format(self._collection)
+        return f"<< GenericDatabaseFieldsFunctions:{self._collection} >>"

@@ -61,33 +61,32 @@ class CveSearchCursor(Cursor):
         """
         if self.__empty:
             raise StopIteration
-        if len(self.__data) or self._refresh():
-            if self.__manipulate:
-                _db = self.__collection.database
-                try:
-                    return _db._fix_outgoing(
-                        self.database_objects_mapping[self.__collname](
-                            **self.__data.popleft()
-                        ),
-                        self.__collection,
-                    )
-                except KeyError:
-                    return _db._fix_outgoing(self.__data.popleft(), self.__collection)
-            else:
-                try:
-                    return self.database_objects_mapping[self.__collname](
-                        **self.__data.popleft()
-                    )
-                except KeyError:
-                    return self.__data.popleft()
-        else:
+        if not len(self.__data) and not self._refresh():
             raise StopIteration
+        if self.__manipulate:
+            _db = self.__collection.database
+            try:
+                return _db._fix_outgoing(
+                    self.database_objects_mapping[self.__collname](
+                        **self.__data.popleft()
+                    ),
+                    self.__collection,
+                )
+            except KeyError:
+                return _db._fix_outgoing(self.__data.popleft(), self.__collection)
+        else:
+            try:
+                return self.database_objects_mapping[self.__collname](
+                    **self.__data.popleft()
+                )
+            except KeyError:
+                return self.__data.popleft()
 
     __next__ = next
 
     def __repr__(self):
         """ Return string representation of this class """
-        return "<< CveSearchCursor:{} >>".format(self.collection)
+        return f"<< CveSearchCursor:{self.collection} >>"
 
 
 class CveSearchCollection(Collection):
@@ -112,7 +111,7 @@ class CveSearchCollection(Collection):
 
     def __repr__(self):
         """ Return string representation of this class """
-        return "<< CveSearchCollection:{} >>".format(self.name)
+        return f"<< CveSearchCollection:{self.name} >>"
 
     def find(self, *args, **kwargs):
         """

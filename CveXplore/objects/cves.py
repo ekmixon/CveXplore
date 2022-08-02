@@ -19,26 +19,29 @@ class Cves(DatasourceConnection):
         for each in kwargs:
             setattr(self, each, kwargs[each])
 
-        if hasattr(self, "cwe"):
-            if isinstance(self.cwe, str):
-                if self.cwe.lower() != "unknown":
-                    cwe_id = self.cwe[4:]
+        if (
+            hasattr(self, "cwe")
+            and isinstance(self.cwe, str)
+            and self.cwe.lower() != "unknown"
+        ):
+            cwe_id = self.cwe[4:]
                     # check if cwe_id can be cast to int
-                    try:
-                        if int(cwe_id):
-                            results = getattr(
-                                self._datasource_connection, "store_{}".format("cwe")
-                            ).find_one({"id": cwe_id})
-                            if results is not None:
-                                self.cwe = results
-                    except ValueError:
-                        pass
+            try:
+                if int(cwe_id):
+                    results = getattr(
+                        self._datasource_connection, 'store_cwe'
+                    ).find_one({"id": cwe_id})
 
-                    capecs = self._datasource_connection.store_capec.find(
-                        {"related_weakness": {"$in": [cwe_id]}}
-                    )
+                    if results is not None:
+                        self.cwe = results
+            except ValueError:
+                pass
 
-                    setattr(self, "capec", list(capecs))
+            capecs = self._datasource_connection.store_capec.find(
+                {"related_weakness": {"$in": [cwe_id]}}
+            )
+
+            setattr(self, "capec", list(capecs))
 
         via4s = self._datasource_connection.store_via4.find_one({"id": self.id})
 
@@ -54,8 +57,7 @@ class Cves(DatasourceConnection):
         """
 
         if hasattr(self, "vulnerable_configuration"):
-            for each in self.vulnerable_configuration:
-                yield each
+            yield from self.vulnerable_configuration
 
     def iter_references(self):
         """
@@ -66,8 +68,7 @@ class Cves(DatasourceConnection):
         """
 
         if hasattr(self, "references"):
-            for each in self.references:
-                yield each
+            yield from self.references
 
     def iter_capec(self):
         """
@@ -78,8 +79,7 @@ class Cves(DatasourceConnection):
         """
 
         if hasattr(self, "capec"):
-            for each in self.capec:
-                yield each
+            yield from self.capec
 
     def to_dict(self):
         """
@@ -94,13 +94,13 @@ class Cves(DatasourceConnection):
         for k, v in full_dict.items():
             if isinstance(v, DatasourceConnection):
                 full_dict[k] = v.to_dict()
-            if isinstance(v, list):
-                if len(v) > 0:
-                    if isinstance(v[0], DatasourceConnection):
-                        new_list = []
-                        for each in v:
-                            new_list.append(each.to_dict())
-                        full_dict[k] = new_list
+            if (
+                isinstance(v, list)
+                and len(v) > 0
+                and isinstance(v[0], DatasourceConnection)
+            ):
+                new_list = [each.to_dict() for each in v]
+                full_dict[k] = new_list
             if isinstance(v, datetime.datetime):
                 full_dict[k] = str(v)
 
@@ -114,4 +114,4 @@ class Cves(DatasourceConnection):
 
     def __repr__(self):
         """ String representation of object """
-        return "<< Cves:{} >>".format(self.id)
+        return f"<< Cves:{self.id} >>"

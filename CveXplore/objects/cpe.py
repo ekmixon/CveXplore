@@ -47,10 +47,10 @@ class Cpe(DatasourceConnection):
 
             cpe_regex = re.escape(re.sub(remove_trailing_regex_stars, "", cpe_string))
 
-            cpe_regex_string = r"^{}:".format(cpe_regex)
+            cpe_regex_string = f"^{cpe_regex}:"
         else:
             # more general search on same field; e.g. microsoft:windows_7
-            cpe_regex_string = "{}".format(re.escape(cpe_string))
+            cpe_regex_string = f"{re.escape(cpe_string)}"
 
         results = self._datasource_connection.store_cves.find(
             {cpe_searchField: {"$regex": cpe_regex_string}}
@@ -71,8 +71,7 @@ class Cpe(DatasourceConnection):
         """
 
         if hasattr(self, "cpe_name"):
-            for each in self.cpe_name:
-                yield each
+            yield from self.cpe_name
         else:
             return "None"
 
@@ -94,4 +93,4 @@ class Cpe(DatasourceConnection):
 
     def __repr__(self):
         """ String representation of object """
-        return "<< Cpe:{} >>".format(self.id)
+        return f"<< Cpe:{self.id} >>"

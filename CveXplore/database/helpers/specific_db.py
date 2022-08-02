@@ -36,4 +36,4 @@ class CvesDatabaseFunctions(GenericDatabaseFactory):
 
     def __repr__(self):
         """ String representation of object """
-        return "<< CvesDatabaseFunctions:{} >>".format(self._collection)
+        return f"<< CvesDatabaseFunctions:{self._collection} >>"

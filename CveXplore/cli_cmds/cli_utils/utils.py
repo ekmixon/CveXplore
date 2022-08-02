@@ -29,11 +29,9 @@ def format_output(format_type, input_list):
         output = df.to_html(index=False)
     elif format_type == "xml":
         if isinstance(input_list, list):
-            count = 1
             temp_dict = defaultdict(dict)
-            for each in input_list:
-                temp_dict["entry_{}".format(count)] = each
-                count += 1
+            for count, each in enumerate(input_list, start=1):
+                temp_dict[f"entry_{count}"] = each
             output = dicttoxml(temp_dict, custom_root="CveXplore")
         elif isinstance(input_list, dict):
             output = dicttoxml(input_list, custom_root="CveXplore")
@@ -43,13 +41,9 @@ def format_output(format_type, input_list):
 
 def printer(input_data, pretty=False, output="json"):
 
-    if isinstance(input_data, list):
-        if not pretty:
-            click.echo(format_output(output, input_data))
-        else:
-            click.secho(pformat(input_data, indent=4), bold=True, fg="blue")
+    if isinstance(input_data, list) and not pretty:
+        click.echo(format_output(output, input_data))
+    elif isinstance(input_data, list) or isinstance(input_data, dict) and pretty:
+        click.secho(pformat(input_data, indent=4), bold=True, fg="blue")
     elif isinstance(input_data, dict):
-        if not pretty:
-            click.echo(input_data)
-        else:
-            click.secho(pformat(input_data, indent=4), bold=True, fg="blue")
+        click.echo(input_data)

@@ -71,7 +71,7 @@ class DownloadHandler(ABC):
 
     def __repr__(self):
         """ return string representation of object """
-        return "<< DownloadHandler:{} >>".format(self.feed_type)
+        return f"<< DownloadHandler:{self.feed_type} >>"
 
     def get_session(
         self,
@@ -127,17 +127,14 @@ class DownloadHandler(ABC):
                 desc="Processing downloaded files",
             )
 
-            chunks = []
-
-            for batch in iter(lambda: list(islice(self.queue, 10000)), []):
-                chunks.append(batch)
+            chunks = list(iter(lambda: list(islice(self.queue, 10000)), []))
 
             thread_map(
                 self._db_bulk_writer, chunks, desc="Transferring queue to database"
             )
 
             # checking if last-modified was in the response headers and not set to default
-            if "01-01-1970" != self.last_modified.strftime("%d-%m-%Y"):
+            if self.last_modified.strftime("%d-%m-%Y") != "01-01-1970":
                 self.setColUpdate(self.feed_type.lower(), self.last_modified)
 
         self.logger.info(
@@ -169,8 +166,7 @@ class DownloadHandler(ABC):
         try:
             self.database[self.feed_type.lower()].bulk_write(batch, ordered=False)
         except BulkWriteError as err:
-            self.logger.debug("Error during bulk write: {}".format(err))
-            pass
+            self.logger.debug(f"Error during bulk write: {err}")
 
     def store_file(self, response_content, content_type, url):
         """
@@ -188,67 +184,65 @@ class DownloadHandler(ABC):
         wd = tempfile.mkdtemp()
         filename = None
 
-        if (
-            content_type == "application/zip"
-            or content_type == "application/x-zip"
-            or content_type == "application/x-zip-compressed"
-            or content_type == "application/zip-compressed"
-        ):
+        if content_type in [
+            "application/zip",
+            "application/x-zip",
+            "application/x-zip-compressed",
+            "application/zip-compressed",
+        ]:
             filename = os.path.join(wd, url.split("/")[-1][:-4])
-            self.logger.debug("Saving file to: {}".format(filename))
+            self.logger.debug(f"Saving file to: {filename}")
 
             with zipfile.ZipFile(BytesIO(response_content)) as zip_file:
                 zip_file.extractall(wd)
 
-        elif (
-            content_type == "application/x-gzip"
-            or content_type == "application/gzip"
-            or content_type == "application/x-gzip-compressed"
-            or content_type == "application/gzip-compressed"
-        ):
+        elif content_type in [
+            "application/x-gzip",
+            "application/gzip",
+            "application/x-gzip-compressed",
+            "application/gzip-compressed",
+        ]:
             filename = os.path.join(wd, url.split("/")[-1][:-3])
-            self.logger.debug("Saving file to: {}".format(filename))
+            self.logger.debug(f"Saving file to: {filename}")
 
             buf = BytesIO(response_content)
             with open(filename, "wb") as f:
                 f.write(gzip.GzipFile(fileobj=buf).read())
 
-        elif content_type == "application/json" or content_type == "application/xml":
+        elif content_type in ["application/json", "application/xml"]:
             filename = os.path.join(wd, url.split("/")[-1])
-            self.logger.debug("Saving file to: {}".format(filename))
+            self.logger.debug(f"Saving file to: {filename}")
 
             with open(filename, "wb") as output_file:
                 output_file.write(response_content)
 
         elif content_type == "application/local":
             filename = os.path.join(wd, url.split("/")[-1])
-            self.logger.debug("Saving file to: {}".format(filename))
+            self.logger.debug(f"Saving file to: {filename}")
 
             copy(url[7:], filename)
 
         else:
             self.logger.error(
-                "Unhandled Content-Type encountered: {} from url".format(
-                    content_type, url
-                )
+                f"Unhandled Content-Type encountered: {content_type} from url"
             )
+
             sys.exit(1)
 
         return wd, filename
 
     def download_site(self, url):
         if url[:4] == "file":
-            self.logger.info("Scheduling local hosted file: {}".format(url))
+            self.logger.info(f"Scheduling local hosted file: {url}")
 
             # local file do not get last_modified header; so completely ignoring last_modified check and always asume
             # local file == the last modified file and set to current time.
             self.last_modified = datetime.datetime.now()
 
             self.logger.debug(
-                "Last {} modified value: {} for URL: {}".format(
-                    self.feed_type, self.last_modified, url
-                )
+                f"Last {self.feed_type} modified value: {self.last_modified} for URL: {url}"
             )
+
 
             wd, filename = self.store_file(
                 response_content=b"local", content_type="application/local", url=url
@@ -263,7 +257,7 @@ class DownloadHandler(ABC):
                 sys.exit(1)
 
         else:
-            self.logger.debug("Downloading from url: {}".format(url))
+            self.logger.debug(f"Downloading from url: {url}")
             session = self.get_session()
             try:
                 with session.get(url) as response:
@@ -273,37 +267,27 @@ class DownloadHandler(ABC):
                         )
                     except KeyError:
                         self.logger.error(
-                            "Did not receive last-modified header in the response; setting to default "
-                            "(01-01-1970) and force update! Headers received: {}".format(
-                                response.headers
-                            )
+                            f"Did not receive last-modified header in the response; setting to default (01-01-1970) and force update! Headers received: {response.headers}"
                         )
+
                         # setting to last_modified to default value
                         self.last_modified = parse_datetime("01-01-1970")
 
                     self.logger.debug(
-                        "Last {} modified value: {} for URL: {}".format(
-                            self.feed_type, self.last_modified, url
-                        )
+                        f"Last {self.feed_type} modified value: {self.last_modified} for URL: {url}"
                     )
+
 
                     i = self.getInfo(self.feed_type.lower())
 
-                    if i is not None:
-                        if self.last_modified == i["last-modified"]:
-                            self.logger.info(
-                                "{}'s are not modified since the last update".format(
-                                    self.feed_type
-                                )
-                            )
-                            self.file_queue.getall()
-                            self.do_process = False
+                    if i is not None and self.last_modified == i["last-modified"]:
+                        self.logger.info(f"{self.feed_type}'s are not modified since the last update")
+                        self.file_queue.getall()
+                        self.do_process = False
                     if self.do_process:
                         content_type = response.headers["content-type"]
 
-                        self.logger.debug(
-                            "URL: {} fetched Content-Type: {}".format(url, content_type)
-                        )
+                        self.logger.debug(f"URL: {url} fetched Content-Type: {content_type}")
 
                         wd, filename = self.store_file(
                             response_content=response.content,
@@ -320,15 +304,13 @@ class DownloadHandler(ABC):
                             sys.exit(1)
             except Exception as err:
                 self.logger.info(
-                    "Exception encountered during download from: {}. Please check the logs for more information!".format(
-                        url
-                    )
+                    f"Exception encountered during download from: {url}. Please check the logs for more information!"
                 )
+
                 self.logger.error(
-                    "Exception encountered during the download from: {}. Error encountered: {}".format(
-                        url, err
-                    )
+                    f"Exception encountered during the download from: {url}. Error encountered: {err}"
                 )
+
                 self.do_process = False
 
     def dropCollection(self, col):

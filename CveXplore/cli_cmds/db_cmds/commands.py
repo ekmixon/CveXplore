@@ -39,16 +39,10 @@ def sources_cmd(ctx):
 def show_cmd(ctx, pretty):
     config = Configuration()
 
-    if ctx.invoked_subcommand is None:
-        printer(
-            input_data=config.SOURCES,
-            pretty=pretty,
-        )
-    else:
-        printer(
-            input_data=config.SOURCES,
-            pretty=pretty,
-        )
+    printer(
+        input_data=config.SOURCES,
+        pretty=pretty,
+    )
 
 
 @sources_cmd.group("set", invoke_without_command=True, help="Set sources")

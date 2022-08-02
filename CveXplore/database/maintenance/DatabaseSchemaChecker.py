@@ -29,7 +29,7 @@ class SchemaChecker(object):
 
             current_record = list(self.dbh.find({}))
 
-            if len(current_record) != 0:
+            if current_record:
                 current_record[0]["version"] = self.schema_version["version"]
                 current_record[0]["rebuild_needed"] = self.schema_version[
                     "rebuild_needed"

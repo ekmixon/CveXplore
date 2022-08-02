@@ -16,7 +16,7 @@ class WorkerQueue(Queue):
         self.qsize()
 
     def __repr__(self):
-        return "<< WorkerQueue:{} >>".format(self.name)
+        return f"<< WorkerQueue:{self.name} >>"
 
     def __iter__(self):
         return self
@@ -24,12 +24,11 @@ class WorkerQueue(Queue):
     def __next__(self):
         try:
             item = self.get(timeout=1)
-            if item is not None:
-                if isinstance(item, DatabaseAction):
-                    item = item.entry
-                return item
-            else:
+            if item is None:
                 raise StopIteration
+            if isinstance(item, DatabaseAction):
+                item = item.entry
+            return item
         except Empty:
             raise StopIteration
 

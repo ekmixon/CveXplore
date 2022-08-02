@@ -67,8 +67,8 @@ class CveXplore(object):
             os.environ["MONGODB_CON_DETAILS"] = json.dumps(mongodb_connection_details)
             self.datasource = MongoDBConnection(**mongodb_connection_details)
             self.database = MainUpdater(datasource=self.datasource)
-        elif api_connection_details is not None:
-            api_connection_details["user_agent"] = "CveXplore:{}".format(self.version)
+        else:
+            api_connection_details["user_agent"] = f"CveXplore:{self.version}"
             os.environ["API_CON_DETAILS"] = json.dumps(api_connection_details)
             self.datasource = ApiDatabaseSource(**api_connection_details)
 
@@ -104,16 +104,11 @@ class CveXplore(object):
 
         if entry_type not in self.database_mapping:
             raise DatabaseIllegalCollection(
-                "Illegal collection requested: only {} are allowed!".format(
-                    self.database_mapping
-                )
+                f"Illegal collection requested: only {self.database_mapping} are allowed!"
             )
 
-        result = getattr(self.datasource, "store_{}".format(entry_type)).find_one(
-            dict_filter
-        )
 
-        return result
+        return getattr(self.datasource, f"store_{entry_type}").find_one(dict_filter)
 
     def get_single_store_entries(self, query, limit=10):
         """
@@ -137,15 +132,15 @@ class CveXplore(object):
         """
         if not isinstance(query, tuple):
             raise ValueError(
-                "Wrong parameter type, received: {} expected: tuple".format(type(query))
+                f"Wrong parameter type, received: {type(query)} expected: tuple"
             )
+
 
         if len(query) != 2:
             raise ValueError(
-                "Query parameter does not consist of the expected amount of variables, expected: 2 received: {}".format(
-                    len(query)
-                )
+                f"Query parameter does not consist of the expected amount of variables, expected: 2 received: {len(query)}"
             )
+
 
         entry_type, dict_filter = query
 
@@ -153,16 +148,16 @@ class CveXplore(object):
 
         if entry_type not in self.database_mapping:
             raise DatabaseIllegalCollection(
-                "Illegal collection requested: only {} are allowed!".format(
-                    self.database_mapping
-                )
+                f"Illegal collection requested: only {self.database_mapping} are allowed!"
             )
 
+
         results = (
-            getattr(self.datasource, "store_{}".format(entry_type))
+            getattr(self.datasource, f"store_{entry_type}")
             .find(dict_filter)
             .limit(limit)
         )
+
 
         return list(results)
 
@@ -219,17 +214,15 @@ class CveXplore(object):
 
             cpe_regex = re.escape(re.sub(remove_trailing_regex_stars, "", cpe_string))
 
-            cpe_regex_string = r"^{}:".format(cpe_regex)
+            cpe_regex_string = f"^{cpe_regex}:"
         else:
             # more general search on same field; e.g. microsoft:windows_7
-            cpe_regex_string = "{}".format(re.escape(cpe_string))
+            cpe_regex_string = f"{re.escape(cpe_string)}"
 
-        cves = self.get_single_store_entries(
+        return self.get_single_store_entries(
             ("cves", {"vulnerable_configuration": {"$regex": cpe_regex_string}}),
             limit=0,
         )
-
-        return cves
 
     def cve_by_id(self, cve_id):
         """
@@ -254,10 +247,7 @@ class CveXplore(object):
 
         cwe = self.get_single_store_entry("cwe", {"id": cwe_id})
 
-        if cwe is not None:
-            return list(cwe.iter_related_capecs())
-        else:
-            return cwe
+        return list(cwe.iter_related_capecs()) if cwe is not None else cwe
 
     def last_cves(self, limit=10):
         """
@@ -289,36 +279,34 @@ class CveXplore(object):
 
         if not isinstance(self.datasource, ApiDatabaseSource):
 
-            if hasattr(self.datasource, "store_info"):
-                results = self.datasource.store_info.find({})
-                for each in results:
-                    each.pop("_id")
-                    db = each["db"]
-                    each.pop("db")
-
-                    if "sources" in each:
-                        each.pop("sources")
-                        each.pop("searchables")
-
-                    each["last-modified"] = str(each["last-modified"])
-                    each["document count"] = getattr(
-                        self.datasource, "store_{}".format(db)
-                    ).count()
-                    stats[db] = each
-
-                    for mgmtlist in ["mgmt_blacklist", "mgmt_whitelist"]:
-                        stats[mgmtlist] = {
-                            "document count": getattr(
-                                self.datasource, "store_{}".format(mgmtlist)
-                            ).count()
-                        }
-
-                return dict(stats)
-
-            else:
+            if not hasattr(self.datasource, "store_info"):
                 return "Database info could not be retrieved"
 
-        return "Using api endpoint: {}".format(self.datasource.url)
+            results = self.datasource.store_info.find({})
+            for each in results:
+                each.pop("_id")
+                db = each["db"]
+                each.pop("db")
+
+                if "sources" in each:
+                    each.pop("sources")
+                    each.pop("searchables")
+
+                each["last-modified"] = str(each["last-modified"])
+                each["document count"] = getattr(self.datasource, f"store_{db}").count()
+                stats[db] = each
+
+                for mgmtlist in ["mgmt_blacklist", "mgmt_whitelist"]:
+                    stats[mgmtlist] = {
+                        "document count": getattr(
+                            self.datasource, f"store_{mgmtlist}"
+                        ).count()
+                    }
+
+
+            return dict(stats)
+
+        return f"Using api endpoint: {self.datasource.url}"
 
     @property
     def version(self):
@@ -327,4 +315,4 @@ class CveXplore(object):
 
     def __repr__(self):
         """ String representation of object """
-        return "<< CveXplore:{} >>".format(self.version)
+        return f"<< CveXplore:{self.version} >>"

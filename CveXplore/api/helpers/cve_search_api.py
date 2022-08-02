@@ -59,9 +59,7 @@ class CveSearchApi(GenericApi):
 
     def __repr__(self):
         """return a string representation of the obj GenericApi"""
-        return "<<CveSearchApi:({}, {})>>".format(
-            self.db_collection.address[0], self.db_collection.address[1]
-        )
+        return f"<<CveSearchApi:({self.db_collection.address[0]}, {self.db_collection.address[1]})>>"
 
     def query(self):
         """
@@ -130,11 +128,7 @@ class CveSearchApi(GenericApi):
         :rtype: CveSearchApi
         """
 
-        if direction == pymongo.DESCENDING:
-            direction = "DESC"
-        else:
-            direction = "ASC"
-
+        direction = "DESC" if direction == pymongo.DESCENDING else "ASC"
         self.__sort = (field, direction)
 
         self.__data["sort"] = self.__sort[0]

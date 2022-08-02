@@ -48,10 +48,7 @@ def search_cmd(ctx, collection, field, value, limit, pretty, output):
     if ctx.invoked_subcommand is None:
         printer(input_data=result, pretty=pretty, output=output)
     else:
-        if pretty:
-            ctx.obj["RESULT"] = pformat(result, indent=4)
-        else:
-            ctx.obj["RESULT"] = result
+        ctx.obj["RESULT"] = pformat(result, indent=4) if pretty else result
 
 
 @search_cmd.command("less", help="Lets you scroll through the returned results")

@@ -46,30 +46,28 @@ class MongoDBConnection(object):
         try:
             collections = self._dbclient.list_collection_names()
         except ServerSelectionTimeoutError as err:
-            raise DatabaseConnectionException(
-                "Connection to the database failed: {}".format(err)
-            )
+            raise DatabaseConnectionException(f"Connection to the database failed: {err}")
 
         if len(collections) != 0:
             for each in collections:
                 self.__setattr__(
-                    "store_{}".format(each),
+                    f"store_{each}",
                     CveSearchCollection(database=self._dbclient, name=each),
                 )
+
 
         atexit.register(self.disconnect)
 
     def get_collections_details(self):
 
-        for each in self._dbclient.list_collections():
-            yield each
+        yield from self._dbclient.list_collections()
 
     def set_handlers_for_collections(self):
         for each in self._dbclient.list_collection_names():
             if not hasattr(self, each):
                 setattr(
                     self,
-                    "store_{}".format(each),
+                    f"store_{each}",
                     CveSearchCollection(database=self._dbclient, name=each),
                 )
 
@@ -91,4 +89,4 @@ class MongoDBConnection(object):
 
     def __repr__(self):
         """ String representation of object """
-        return "<< MongoDBConnection:{} >>".format(self._dbclient.name)
+        return f"<< MongoDBConnection:{self._dbclient.name} >>"
